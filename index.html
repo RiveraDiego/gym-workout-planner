@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#f5a623">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GymPlan">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Mi Plan de Entrenamiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --card: #1e1e1e;
+    --accent: #f5a623;
+    --accent2: #e84040;
+    --text: #f0f0f0;
+    --muted: #888;
+    --border: #2a2a2a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* INSTALL BANNER */
+  #install-banner {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--accent);
+    color: #000;
+    padding: 14px 20px;
+    z-index: 999;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+  }
+  #install-banner.show { display: flex; }
+  #install-banner p { font-weight: 600; font-size: 13px; flex: 1; }
+  #install-btn {
+    background: #000;
+    color: var(--accent);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #dismiss-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #000;
+    padding: 0 4px;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 3px solid var(--accent);
+    padding: 28px 20px 20px;
+    text-align: center;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  header p {
+    color: var(--muted);
+    margin-top: 4px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .badges {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    background: #252525;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .badge.red { border-color: var(--accent2); color: var(--accent2); }
+
+  .tabs {
+    display: flex;
+    overflow-x: auto;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .tab:active { background: #1a1a1a; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .content { padding: 20px 14px 100px; max-width: 700px; margin: 0 auto; }
+  .day { display: none; }
+  .day.active { display: block; }
+
+  .day-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .day-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--accent);
+    line-height: 1;
+    opacity: 0.25;
+  }
+  .day-info h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+  }
+  .day-info p { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .rest-info {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .rest-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    flex: 1;
+    min-width: 100px;
+  }
+  .rest-card .label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .rest-card .value { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--accent); margin-top: 2px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 20px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .exercise-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+  .exercise-card:active { border-color: var(--accent); background: #222; }
+  .exercise-card.done { opacity: 0.45; border-color: #333; }
+  .exercise-card.done .ex-name { text-decoration: line-through; }
+
+  .ex-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--accent);
+    min-width: 28px;
+    text-align: center;
+    opacity: 0.5;
+  }
+  .ex-body { flex: 1; }
+  .ex-name { font-weight: 600; color: var(--text); font-size: 13px; line-height: 1.3; }
+  .ex-book { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .ex-pills { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .pill {
+    display: inline-block;
+    background: #252525;
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .pill.orange { border-color: var(--accent); color: var(--accent); }
+  .pill.red { border-color: var(--accent2); color: var(--accent2); }
+  .check-icon { font-size: 20px; min-width: 24px; text-align: center; }
+
+  .tip-box {
+    background: #1a1a0a;
+    border-left: 3px solid var(--accent);
+    padding: 12px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #ccc;
+  }
+  .tip-box strong { color: var(--accent); }
+
+  .progress-bar-wrap {
+    background: #222;
+    border-radius: 4px;
+    height: 4px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .progress-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-align: right;
+  }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--muted);
+    font-size: 10px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div id="install-banner">
+  <p>📲 Instalá esta app en tu Android</p>
+  <button id="install-btn">Instalar</button>
+  <button id="dismiss-btn">✕</button>
+</div>
+
+<header>
+  <h1>Plan de Entrenamiento</h1>
+  <p>Guía de los Movimientos de Musculación · Frédéric Delavier · 6ª Ed.</p>
+  <div class="badges">
+    <span class="badge">🔥 Grasa</span>
+    <span class="badge">💪 Músculo</span>
+    <span class="badge">⚡ Fuerza</span>
+    <span class="badge">🫁 Resistencia</span>
+    <span class="badge red">Lun — Vie</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="show(0)">LUN</div>
+  <div class="tab" onclick="show(1)">MAR</div>
+  <div class="tab" onclick="show(2)">MIÉ</div>
+  <div class="tab" onclick="show(3)">JUE</div>
+  <div class="tab" onclick="show(4)">VIE</div>
+</div>
+
+<div class="content">
+
+  <!-- LUNES -->
+  <div class="day active" id="day0">
+    <div class="day-header">
+      <div class="day-number">01</div>
+      <div class="day-info">
+        <h2>Pecho + Tríceps</h2>
+        <p>Empuje · Masa + Definición</p>
+      </div>
+    </div>
+    <div class="rest-info">
+      <div class="rest-card"><div class="label">Descanso</div><div class="value">60–90 seg</div></div>
+      <div class="rest-card"><div class="label">Duración</div><div class="value">75–90 min</div></div>
+      <div class="rest-card"><div class="label">Calentamiento</div><div class="value">10 min</div></div>
+    </div>
+    <div class="progress-label" id="prog-label-0">0 / 8 ejercicios</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-0" style="width:0%"></div></div>
+
+    <div class="section-label">Pectorales</div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">1</div><div class="ex-body"><div class="ex-name">Press de Banco Inclinado</div><div class="ex-book">Cap. 03 · Pectorales — p. 62</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">2</div><div class="ex-body"><div class="ex-name">Press de Banco Plano</div><div class="ex-book">Cap. 03 · Pectorales — p. 64</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">3</div><div class="ex-body"><div class="ex-name">Flexiones de Brazos en el Suelo</div><div class="ex-book">Cap. 03 · Pectorales — p. 76</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">Máx. reps</span><span class="pill">Peso Corporal</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">4</div><div class="ex-body"><div class="ex-name">Aperturas con Mancuernas en Banco Plano</div><div class="ex-book">Cap. 03 · Pectorales — p. 78</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+
+    <div class="section-label">Tríceps</div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">5</div><div class="ex-body"><div class="ex-name">Dips o Fondos en Paralelas</div><div class="ex-book">Cap. 03 · Pectorales — p. 74</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">8–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">6</div><div class="ex-body"><div class="ex-name">Extensión de los Brazos con Barra en Banco Plano</div><div class="ex-book">Cap. 01 · Brazos — p. 24</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">7</div><div class="ex-body"><div class="ex-name">Extensiones de Tríceps en Polea Alta</div><div class="ex-book">Cap. 01 · Brazos — p. 20</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,0)"><div class="ex-num">8</div><div class="ex-body"><div class="ex-name">Dippings entre dos Bancos</div><div class="ex-book">Cap. 01 · Brazos — p. 30</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">Máx. reps</span><span class="pill">Peso Corporal</span></div></div><div class="check-icon">○</div></div>
+    <div class="tip-box"><strong>💡 Tip:</strong> Empezá siempre con los ejercicios compuestos (banca) cuando tenés más energía. Los de aislamiento van al final.</div>
+  </div>
+
+  <!-- MARTES -->
+  <div class="day" id="day1">
+    <div class="day-header">
+      <div class="day-number">02</div>
+      <div class="day-info">
+        <h2>Espalda + Bíceps</h2>
+        <p>Tirón · Fuerza + Grosor</p>
+      </div>
+    </div>
+    <div class="rest-info">
+      <div class="rest-card"><div class="label">Descanso</div><div class="value">60–90 seg</div></div>
+      <div class="rest-card"><div class="label">Duración</div><div class="value">75–90 min</div></div>
+      <div class="rest-card"><div class="label">Calentamiento</div><div class="value">10 min</div></div>
+    </div>
+    <div class="progress-label" id="prog-label-1">0 / 8 ejercicios</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-1" style="width:0%"></div></div>
+
+    <div class="section-label">Espalda</div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">1</div><div class="ex-body"><div class="ex-name">Peso Muerto con Barra ★</div><div class="ex-book">Cap. 04 · Espalda — p. 104</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">8–10 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">2</div><div class="ex-body"><div class="ex-name">Tracción Pecho en Polea Alta</div><div class="ex-book">Cap. 04 · Espalda — p. 90</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">3</div><div class="ex-body"><div class="ex-name">Remo en Polea Baja, Agarre Estrecho</div><div class="ex-book">Cap. 04 · Espalda — p. 94</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">4</div><div class="ex-body"><div class="ex-name">Remo Horizontal con Barra</div><div class="ex-book">Cap. 04 · Espalda — p. 99</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">5</div><div class="ex-body"><div class="ex-name">Extensión del Tronco en Banco</div><div class="ex-book">Cap. 04 · Espalda — p. 112</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+
+    <div class="section-label">Bíceps</div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">6</div><div class="ex-body"><div class="ex-name">Flexión Alterna con Rotación de la Muñeca</div><div class="ex-book">Cap. 01 · Brazos — p. 6</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">10–12 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">7</div><div class="ex-body"><div class="ex-name">Curl de Bíceps en el Banco Scott</div><div class="ex-book">Cap. 01 · Brazos — p. 15</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,1)"><div class="ex-num">8</div><div class="ex-body"><div class="ex-name">Flexión "Presa de Martillo" con Mancuernas</div><div class="ex-book">Cap. 01 · Brazos — p. 9</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="tip-box"><strong>💡 Tip:</strong> El Peso Muerto es el ejercicio que más calorías quema de todo el libro. Hacélo primero cuando tenés más energía.</div>
+  </div>
+
+  <!-- MIÉRCOLES -->
+  <div class="day" id="day2">
+    <div class="day-header">
+      <div class="day-number">03</div>
+      <div class="day-info">
+        <h2>Piernas + Glúteos</h2>
+        <p>Tren Inferior · Potencia + Quema Calórica</p>
+      </div>
+    </div>
+    <div class="rest-info">
+      <div class="rest-card"><div class="label">Descanso</div><div class="value">90–120 seg</div></div>
+      <div class="rest-card"><div class="label">Duración</div><div class="value">80–90 min</div></div>
+      <div class="rest-card"><div class="label">Calentamiento</div><div class="value">10 min</div></div>
+    </div>
+    <div class="progress-label" id="prog-label-2">0 / 8 ejercicios</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-2" style="width:0%"></div></div>
+
+    <div class="section-label">Cuádriceps e Isquiotibiales</div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">1</div><div class="ex-body"><div class="ex-name">Squat / Sentadillas con Barra ★</div><div class="ex-book">Cap. 05 · Piernas — p. 125</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">8–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">2</div><div class="ex-body"><div class="ex-name">Press de Piernas Inclinado</div><div class="ex-book">Cap. 05 · Piernas — p. 135</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">3</div><div class="ex-body"><div class="ex-name">Extensión de Rodillas en Máquina</div><div class="ex-book">Cap. 05 · Piernas — p. 138</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">4</div><div class="ex-body"><div class="ex-name">Isquiotibiales en Máquina "Leg Curl"</div><div class="ex-book">Cap. 05 · Piernas — p. 140</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+
+    <div class="section-label">Glúteos</div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">5</div><div class="ex-body"><div class="ex-name">Zancadas con Mancuernas</div><div class="ex-book">Cap. 06 · Glúteos — p. 157</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12 c/lado</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">6</div><div class="ex-body"><div class="ex-name">Extensión de la Cadera en el Suelo</div><div class="ex-book">Cap. 06 · Glúteos — p. 161</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">15–20 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">7</div><div class="ex-body"><div class="ex-name">Elevación de la Pelvis en el Suelo</div><div class="ex-book">Cap. 06 · Glúteos — p. 162</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">15–20 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+
+    <div class="section-label">Pantorrillas</div>
+    <div class="exercise-card" onclick="toggle(this,2)"><div class="ex-num">8</div><div class="ex-body"><div class="ex-name">Gemelos en Máquina "Donkey Calf Raise"</div><div class="ex-book">Cap. 05 · Piernas — p. 151</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">15–20 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="tip-box"><strong>💡 Tip:</strong> El día de piernas es el que más calorías quema en toda la semana. No lo saltes aunque estés agotado — es el día clave para bajar de peso.</div>
+  </div>
+
+  <!-- JUEVES -->
+  <div class="day" id="day3">
+    <div class="day-header">
+      <div class="day-number">04</div>
+      <div class="day-info">
+        <h2>Hombros + Trapecios</h2>
+        <p>Deltoides · Amplitud + Definición</p>
+      </div>
+    </div>
+    <div class="rest-info">
+      <div class="rest-card"><div class="label">Descanso</div><div class="value">60–90 seg</div></div>
+      <div class="rest-card"><div class="label">Duración</div><div class="value">70–80 min</div></div>
+      <div class="rest-card"><div class="label">Calentamiento</div><div class="value">10 min</div></div>
+    </div>
+    <div class="progress-label" id="prog-label-3">0 / 8 ejercicios</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-3" style="width:0%"></div></div>
+
+    <div class="section-label">Hombros</div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">1</div><div class="ex-body"><div class="ex-name">Press Frontal con Barra</div><div class="ex-book">Cap. 02 · Hombros — p. 34</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">2</div><div class="ex-body"><div class="ex-name">Press Sentado con Mancuernas</div><div class="ex-book">Cap. 02 · Hombros — p. 35</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">3</div><div class="ex-body"><div class="ex-name">Elevaciones Laterales con Mancuernas</div><div class="ex-book">Cap. 02 · Hombros — p. 42</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">4</div><div class="ex-body"><div class="ex-name">Elevaciones Frontales con Mancuerna</div><div class="ex-book">Cap. 02 · Hombros — p. 54</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">5</div><div class="ex-body"><div class="ex-name">Cara Posterior de los Hombros en Polea Doble</div><div class="ex-book">Cap. 02 · Hombros — p. 49</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">6</div><div class="ex-body"><div class="ex-name">Parte Posterior de los Hombros en Máquina</div><div class="ex-book">Cap. 02 · Hombros — p. 58</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+
+    <div class="section-label">Trapecios</div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">7</div><div class="ex-body"><div class="ex-name">Encogimiento de Hombros con Barra</div><div class="ex-book">Cap. 04 · Espalda — p. 116</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">12–15 reps</span><span class="pill">Aislamiento</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,3)"><div class="ex-num">8</div><div class="ex-body"><div class="ex-name">Tracción Vertical "Rowing Vertical" con Barra</div><div class="ex-book">Cap. 02 · Hombros — p. 56</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">10–12 reps</span><span class="pill red">Compuesto</span></div></div><div class="check-icon">○</div></div>
+    <div class="tip-box"><strong>💡 Tip:</strong> Los hombros son articulaciones delicadas — nunca los trabajés en frío. El calentamiento previo es obligatorio este día.</div>
+  </div>
+
+  <!-- VIERNES -->
+  <div class="day" id="day4">
+    <div class="day-header">
+      <div class="day-number">05</div>
+      <div class="day-info">
+        <h2>Abdominales + Core</h2>
+        <p>Centro de Fuerza · Resistencia + Quema Final</p>
+      </div>
+    </div>
+    <div class="rest-info">
+      <div class="rest-card"><div class="label">Descanso</div><div class="value">45–60 seg</div></div>
+      <div class="rest-card"><div class="label">Duración</div><div class="value">60–70 min</div></div>
+      <div class="rest-card"><div class="label">Cardio final</div><div class="value">15–20 min</div></div>
+    </div>
+    <div class="progress-label" id="prog-label-4">0 / 8 ejercicios</div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-4" style="width:0%"></div></div>
+
+    <div class="section-label">Core Superior</div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">1</div><div class="ex-body"><div class="ex-name">Encogimientos Abdominales "Crunch"</div><div class="ex-book">Cap. 07 · Abdominales — p. 172</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">20–25 reps</span><span class="pill">Core</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">2</div><div class="ex-body"><div class="ex-name">Elevaciones del Tronco en Espaldera</div><div class="ex-book">Cap. 07 · Abdominales — p. 174</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">15–20 reps</span><span class="pill">Core</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">3</div><div class="ex-body"><div class="ex-name">Encogimientos con Pies en Banco "Crunch"</div><div class="ex-book">Cap. 07 · Abdominales — p. 175</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">20 reps</span><span class="pill">Core</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">4</div><div class="ex-body"><div class="ex-name">Encogimientos Abdominales con Polea Alta</div><div class="ex-book">Cap. 07 · Abdominales — p. 178</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">15–20 reps</span><span class="pill">Core</span></div></div><div class="check-icon">○</div></div>
+
+    <div class="section-label">Core Inferior y Oblicuos</div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">5</div><div class="ex-body"><div class="ex-name">Elevaciones de Piernas en Plancha Inclinada</div><div class="ex-book">Cap. 07 · Abdominales — p. 180</div><div class="ex-pills"><span class="pill orange">4 series</span><span class="pill">15–20 reps</span><span class="pill">Core</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">6</div><div class="ex-body"><div class="ex-name">Elevaciones de Rodillas en Paralelas</div><div class="ex-book">Cap. 07 · Abdominales — p. 182</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">Máx. reps</span><span class="pill">Core</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">7</div><div class="ex-body"><div class="ex-name">Flexión Lateral del Tronco con Mancuerna</div><div class="ex-book">Cap. 07 · Abdominales — p. 185</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">15 c/lado</span><span class="pill">Oblicuos</span></div></div><div class="check-icon">○</div></div>
+    <div class="exercise-card" onclick="toggle(this,4)"><div class="ex-num">8</div><div class="ex-body"><div class="ex-name">Rotación del Tronco con Bastón</div><div class="ex-book">Cap. 07 · Abdominales — p. 184</div><div class="ex-pills"><span class="pill orange">3 series</span><span class="pill">20 c/lado</span><span class="pill">Oblicuos</span></div></div><div class="check-icon">○</div></div>
+    <div class="tip-box"><strong>💡 Tip:</strong> Hoy cerrás con 15–20 min de cardio moderado (caminadora o bici) después del core. Es el remate de la semana y maximiza la quema de grasa del ayuno nocturno.</div>
+  </div>
+
+  <footer>
+    Diego Menéndez · 143 kg · 175 cm · Inicio: 4 mayo 2026<br>
+    Guía de los Movimientos de Musculación · Frédéric Delavier · 6ª Ed.
+  </footer>
+</div>
+
+<script>
+  // Tab navigation
+  function show(index) {
+    document.querySelectorAll('.day').forEach((d, i) => d.classList.toggle('active', i === index));
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
+  }
+
+  // Exercise toggle (mark as done)
+  const counts = [0, 0, 0, 0, 0];
+  const totals = [8, 8, 8, 8, 8];
+
+  function toggle(card, dayIndex) {
+    const isDone = card.classList.toggle('done');
+    const icon = card.querySelector('.check-icon');
+    icon.textContent = isDone ? '✅' : '○';
+    counts[dayIndex] += isDone ? 1 : -1;
+    updateProgress(dayIndex);
+  }
+
+  function updateProgress(i) {
+    const pct = (counts[i] / totals[i]) * 100;
+    document.getElementById('prog-' + i).style.width = pct + '%';
+    document.getElementById('prog-label-' + i).textContent = counts[i] + ' / ' + totals[i] + ' ejercicios';
+  }
+
+  // PWA install prompt
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('install-banner').classList.add('show');
+  });
+
+  document.getElementById('install-btn').addEventListener('click', () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => {
+        deferredPrompt = null;
+        document.getElementById('install-banner').classList.remove('show');
+      });
+    }
+  });
+
+  document.getElementById('dismiss-btn').addEventListener('click', () => {
+    document.getElementById('install-banner').classList.remove('show');
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(() => {
+      console.log('SW registered');
+    }).catch(err => console.log('SW error:', err));
+  }
+</script>
+</body>
+</html>
